@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ImagePlus, Pencil, RefreshCw, Trash2, X } from "lucide-react";
-import { supabase } from "../../lib/supabase";
+import { createClient as createSupabaseClient } from "../../utils/supabase/client";
 
 const emptyForm = {
   name: "",
@@ -82,7 +82,7 @@ function getApiError(payload, fallback) {
   return fallback;
 }
 
-async function getSessionHeaders() {
+async function getSessionHeaders(supabase) {
   if (!supabase) {
     throw new Error("Konfigurasi Supabase Auth belum tersedia.");
   }
@@ -98,6 +98,7 @@ async function getSessionHeaders() {
 }
 
 export default function ProductManagementForm() {
+  const supabase = useMemo(() => createSupabaseClient(), []);
   const [form, setForm] = useState(emptyForm);
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
@@ -159,7 +160,7 @@ export default function ProductManagementForm() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [supabase]);
 
   useEffect(() => {
     let active = true;
@@ -172,7 +173,7 @@ export default function ProductManagementForm() {
       try {
         const response = await fetch("/api/products", {
           cache: "no-store",
-          headers: await getSessionHeaders(),
+          headers: await getSessionHeaders(supabase),
           signal: controller.signal,
         });
         const payload = await readApiResponse(response);
@@ -222,7 +223,7 @@ export default function ProductManagementForm() {
       active = false;
       controller.abort();
     };
-  }, [refreshKey]);
+  }, [refreshKey, supabase]);
 
   function updateField(event) {
     const { name, value } = event.target;
@@ -314,7 +315,7 @@ export default function ProductManagementForm() {
     try {
       const response = await fetch(
         `/api/products/${encodeURIComponent(product.id)}`,
-        { method: "DELETE", headers: await getSessionHeaders() }
+        { method: "DELETE", headers: await getSessionHeaders(supabase) }
       );
       const payload = await readApiResponse(response);
 
@@ -396,7 +397,7 @@ export default function ProductManagementForm() {
           method: editingId ? "PATCH" : "POST",
           headers: {
             "Content-Type": "application/json",
-            ...(await getSessionHeaders()),
+            ...(await getSessionHeaders(supabase)),
           },
           body: JSON.stringify(product),
         }

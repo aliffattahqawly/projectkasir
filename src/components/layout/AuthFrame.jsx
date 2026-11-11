@@ -1,18 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Footer from "../ui/Footer";
 import Navbar from "../ui/Navbar";
-import { supabase } from "../../lib/supabase";
+import { createClient as createSupabaseClient } from "../../utils/supabase/client";
 
 export default function AuthFrame({ children }) {
   const pathname = usePathname();
   const router = useRouter();
+  const supabase = useMemo(() => createSupabaseClient(), []);
   const [authState, setAuthState] = useState(
     supabase ? "checking" : "signed-out"
   );
-  const isLoginPage = pathname === "/login";
+  const isAuthPage = pathname === "/login" || pathname === "/register";
 
   useEffect(() => {
     let active = true;
@@ -37,17 +38,17 @@ export default function AuthFrame({ children }) {
       active = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [supabase]);
 
   useEffect(() => {
-    if (authState === "signed-out" && !isLoginPage) {
+    if (authState === "signed-out" && !isAuthPage) {
       router.replace("/login");
-    } else if (authState === "signed-in" && isLoginPage) {
+    } else if (authState === "signed-in" && isAuthPage) {
       router.replace("/");
     }
-  }, [authState, isLoginPage, router]);
+  }, [authState, isAuthPage, router]);
 
-  if (isLoginPage) {
+  if (isAuthPage) {
     return authState === "signed-in" ? null : children;
   }
 

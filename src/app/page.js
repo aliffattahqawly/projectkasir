@@ -1,14 +1,18 @@
 import { Suspense } from "react";
+import { connection } from "next/server";
 import CategorySection from "../components/layout/CategorySection";
 import HeroSlider from "../components/ui/HeroSlider";
 import ProductSection from "../components/layout/ProdukSection";
-import { supabase } from "../lib/supabase";
+import { createClient as createSupabaseClient } from "../utils/supabase/server";
 
 async function CatalogSections() {
+    await connection();
   let categories = [];
   let products = [];
   let categoriesError = false;
   let productsError = false;
+
+  const supabase = await createSupabaseClient();
 
   if (supabase) {
     const [categoryResult, productResult] = await Promise.all([

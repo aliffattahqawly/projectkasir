@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -12,7 +12,7 @@ import {
   Mail,
   ShoppingBag,
 } from "lucide-react";
-import { supabase } from "../../lib/supabase";
+import { createClient as createSupabaseClient } from "../../utils/supabase/client";
 
 // =========================================
 // DATA
@@ -33,6 +33,7 @@ const inputClass =
 
 export default function LoginPage() {
   const router = useRouter();
+  const supabase = useMemo(() => createSupabaseClient(), []);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -88,7 +89,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="relative isolate flex min-h-screen items-center justify-center px-4 pb-16 pt-28 sm:px-6">
+    <main className="relative flex min-h-screen items-center justify-center px-4 py-10">
       {/* BACKGROUND GLOW */}
       <div
         aria-hidden="true"
@@ -250,7 +251,7 @@ export default function LoginPage() {
           <p className="mt-6 text-center text-sm text-slate-500">
             Belum punya akun?{" "}
             <Link
-              href="/daftar"
+              href="/register"
               className="font-semibold text-blue-600 hover:text-blue-800"
             >
               Daftar sekarang
