@@ -3,6 +3,8 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { Settings2, X } from "lucide-react";
+import ProductManagementForm from "../../components/layout/ProductManagementForm";
 
 // ==========================================
 // DATA PRODUK
@@ -93,6 +95,7 @@ export default function ShopPage() {
   const [availability, setAvailability] = useState("Semua");
   const [sort, setSort] = useState("default");
   const [search, setSearch] = useState("");
+  const [manageProducts, setManageProducts] = useState(false);
 
   // MOBILE FILTER
   const [showMobileFilter, setShowMobileFilter] =
@@ -263,20 +266,38 @@ export default function ShopPage() {
       {/* KATALOG */}
       <section id="produk" className="mx-auto max-w-7xl px-5 py-8">
         {/* JUDUL KATALOG */}
-        <div className="mb-7">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-sky-300">
-            OUR COLLECTION
-          </p>
+        <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-sky-300">
+              OUR COLLECTION
+            </p>
 
-          <h1 className="mt-2 text-3xl font-extrabold text-white">
-            Temukan Produk Pilihan
-          </h1>
+            <h1 className="mt-2 text-3xl font-extrabold text-white">
+              Temukan Produk Pilihan
+            </h1>
 
-          <p className="mt-2 text-sm text-blue-100/80">
-            Berbagai kebutuhan pangan dan papan tersedia
-            untuk memenuhi kebutuhanmu.
-          </p>
+            <p className="mt-2 text-sm text-blue-100/80">
+              Berbagai kebutuhan pangan dan papan tersedia
+              untuk memenuhi kebutuhanmu.
+            </p>
+          </div>
+
+          <button
+            className="inline-flex items-center justify-center gap-2 self-start rounded-md border border-white/70 bg-white/90 px-4 py-2.5 text-sm font-semibold text-blue-800 shadow-sm transition hover:bg-white sm:self-auto"
+            type="button"
+            aria-expanded={manageProducts}
+            onClick={() => setManageProducts((open) => !open)}
+          >
+            {manageProducts ? <X size={17} /> : <Settings2 size={17} />}
+            {manageProducts ? "Tutup pengelolaan" : "Kelola produk"}
+          </button>
         </div>
+
+        {manageProducts && (
+          <div className="mb-8 rounded-lg border border-white/80 bg-white p-4 shadow-lg sm:p-6">
+            <ProductManagementForm />
+          </div>
+        )}
 
         {/* ================================== */}
         {/* LAYOUT SIDEBAR + PRODUK */}

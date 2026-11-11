@@ -10,68 +10,8 @@ import {
   ShoppingBag,
 } from "lucide-react";
 
-const products = [
-  {
-    id: 1,
-    name: "Beras Premium 5 Kg",
-    category: "pangan",
-    price: 75000,
-    stock: 15,
-    image:
-      "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=800",
-    badge: "Terlaris",
-  },
-  {
-    id: 2,
-    name: "Minyak Goreng 2L",
-    category: "pangan",
-    price: 36000,
-    stock: 20,
-    image:
-      "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=800",
-    badge: "Pilihan",
-  },
-  {
-    id: 3,
-    name: "Gula Pasir 1 Kg",
-    category: "pangan",
-    price: 18000,
-    stock: 0,
-    image:
-      "https://images.unsplash.com/photo-1581441363689-1f3c3c414635?w=800",
-    badge: "",
-  },
-  {
-    id: 4,
-    name: "Kursi Minimalis",
-    category: "papan",
-    price: 150000,
-    stock: 8,
-    image:
-      "https://images.unsplash.com/photo-1503602642458-232111445657?w=800",
-    badge: "Favorit",
-  },
-  {
-    id: 5,
-    name: "Lampu Meja",
-    category: "papan",
-    price: 85000,
-    stock: 12,
-    image:
-      "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=800",
-    badge: "",
-  },
-  {
-    id: 6,
-    name: "Rak Penyimpanan",
-    category: "papan",
-    price: 125000,
-    stock: 5,
-    image:
-      "https://images.unsplash.com/photo-1594620302200-9a762244a156?w=800",
-    badge: "Baru",
-  },
-];
+const fallbackProductImage =
+  "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=800";
 
 const formatRupiah = (price) => {
   return new Intl.NumberFormat("id-ID", {
@@ -81,15 +21,29 @@ const formatRupiah = (price) => {
   }).format(price);
 };
 
-export default function ProductSection() {
+export default function ProductSection({
+  products = [],
+  categories = [],
+  hasError = false,
+}) {
   const [activeCategory, setActiveCategory] = useState("semua");
   const [addedProducts, setAddedProducts] = useState([]);
+
+  const filters = [
+    { id: "semua", label: "Semua Produk" },
+    ...categories.map((category) => ({
+      id: String(category.slug ?? category.id ?? category.name),
+      label: category.name ?? category.title ?? "Kategori",
+    })),
+  ];
 
   const filteredProducts =
     activeCategory === "semua"
       ? products
       : products.filter(
-          (product) => product.category === activeCategory
+          (product) =>
+            String(product.category_id ?? product.category ?? product.category_slug) ===
+            activeCategory
         );
 
   const handleAddToCart = (product) => {
@@ -103,12 +57,6 @@ export default function ProductSection() {
       );
     }, 1500);
   };
-
-  const filters = [
-    { id: "semua", label: "Semua Produk" },
-    { id: "pangan", label: "Pangan" },
-    { id: "papan", label: "Papan" },
-  ];
 
   return (
     <section
@@ -158,9 +106,24 @@ export default function ProductSection() {
 
         {/* Product Grid */}
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredProducts.map((product) => {
+          {filteredProducts.length === 0 ? (
+            <p className="col-span-full py-8 text-center text-sm text-slate-600">
+              {hasError ? "Produk gagal dimuat." : "Belum ada produk tersedia."}
+            </p>
+          ) : filteredProducts.map((product) => {
             const isAdded = addedProducts.includes(product.id);
-            const isOutOfStock = product.stock === 0;
+            const stock = Number(product.stock ?? 0);
+            const category = categories.find(
+              (item) =>
+                (product.category_id != null &&
+                  String(item.id) === String(product.category_id)) ||
+                ((product.category != null || product.category_slug != null) &&
+                  String(item.slug) ===
+                    String(product.category ?? product.category_slug))
+            );
+            const categoryName =
+              category?.name ?? product.category_name ?? product.category ?? "Produk";
+            const isOutOfStock = stock === 0;
 
             return (
               <div
@@ -177,7 +140,7 @@ export default function ProductSection() {
                 {/* Product Image */}
                 <div className="relative h-64 overflow-hidden bg-blue-100">
                   <img
-                    src={product.image}
+                    src={product.image_url ?? product.image ?? fallbackProductImage}
                     alt={product.name}
                     className={`
                       h-full w-full object-cover
@@ -206,7 +169,7 @@ export default function ProductSection() {
                   {!isOutOfStock && (
                     <span className="absolute bottom-4 right-4 flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-xs font-semibold text-green-700 shadow-md backdrop-blur">
                       <Package size={14} />
-                      Stok {product.stock}
+                      Stok {stock}
                     </span>
                   )}
                 </div>
@@ -214,7 +177,7 @@ export default function ProductSection() {
                 {/* Product Information */}
                 <div className="p-5">
                   <span className="text-xs font-bold uppercase tracking-wider text-blue-500">
-                    {product.category === "pangan" ? "Pangan" : "Papan"}
+                    {categoryName}
                   </span>
 
                   <h3 className="mt-2 text-lg font-bold text-blue-950 transition hover:text-blue-600">

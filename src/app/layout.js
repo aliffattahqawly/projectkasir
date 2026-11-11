@@ -1,5 +1,4 @@
-import Navbar from "../components/ui/Navbar";
-import Footer from "../components/ui/Footer";
+import AuthFrame from "../components/layout/AuthFrame";
 import "./globals.css";
 
 export const metadata = {
@@ -11,9 +10,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="id">
       <body>
-        <Navbar />
-        {children}   
-        <Footer />
+        <AuthFrame>{children}</AuthFrame>
       </body>
     </html>
   );
