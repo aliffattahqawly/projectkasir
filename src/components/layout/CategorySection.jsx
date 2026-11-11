@@ -1,32 +1,30 @@
 
 import { ArrowRight, ShoppingBasket, House } from "lucide-react";
 
-const categories = [
-  {
-    id: "pangan",
-    name: "Pangan",
-    subtitle: "Kebutuhan makanan dan sehari-hari",
-    description:
-      "Temukan berbagai kebutuhan pangan berkualitas untuk memenuhi kebutuhan harianmu.",
-    image:
-      "https://images.unsplash.com/photo-1542838132-92c53300491e?w=1000",
-    icon: ShoppingBasket,
-    button: "Jelajahi Pangan",
-  },
-  {
-    id: "papan",
-    name: "Papan",
-    subtitle: "Kebutuhan rumah dan tempat tinggal",
-    description:
-      "Lengkapi kebutuhan rumah dan perlengkapan tempat tinggal dengan mudah.",
-    image:
-      "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=1000",
-    icon: House,
-    button: "Jelajahi Papan",
-  },
+const categoryImages = [
+  "https://images.unsplash.com/photo-1542838132-92c53300491e?w=1000",
+  "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=1000",
 ];
 
-export default function CategorySection() {
+export default function CategorySection({ categories = [], hasError = false }) {
+  const categoryCards = categories.map((category, index) => {
+    const name = category.name ?? category.title ?? `Kategori ${index + 1}`;
+    const identifier = category.slug ?? category.id ?? name;
+    const isFood = /pangan|makan|food/i.test(`${identifier} ${name}`);
+
+    return {
+      id: identifier,
+      name,
+      subtitle: category.subtitle ?? name,
+      description:
+        category.description ?? `Temukan berbagai produk ${name.toLowerCase()} pilihan.`,
+      image:
+        category.image_url ?? category.image ?? categoryImages[index % categoryImages.length],
+      icon: isFood ? ShoppingBasket : House,
+      button: `Jelajahi ${name}`,
+    };
+  });
+
   return (
     <section
       id="kategori"
@@ -54,7 +52,11 @@ export default function CategorySection() {
 
         {/* Category Cards */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {categories.map((category) => {
+          {categoryCards.length === 0 ? (
+            <p className="col-span-full py-8 text-center text-sm text-slate-600">
+              {hasError ? "Kategori gagal dimuat." : "Belum ada kategori tersedia."}
+            </p>
+          ) : categoryCards.map((category) => {
             const Icon = category.icon;
 
             return (

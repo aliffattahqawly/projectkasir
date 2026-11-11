@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   CheckCircle2,
   Eye,
@@ -11,6 +12,7 @@ import {
   Mail,
   ShoppingBag,
 } from "lucide-react";
+import { supabase } from "../../lib/supabase";
 
 // =========================================
 // DATA
@@ -30,6 +32,7 @@ const inputClass =
 // =========================================
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -58,11 +61,30 @@ export default function LoginPage() {
 
     setLoading(true);
 
-    // TODO: ganti dengan proses login sungguhan (API / NextAuth)
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    if (!supabase) {
+      setError("Konfigurasi Supabase belum tersedia.");
+      setLoading(false);
+      return;
+    }
 
-    setLoading(false);
-    alert("Login berhasil (contoh)");
+    try {
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      if (authError) {
+        setError(authError.message);
+        return;
+      }
+
+      router.replace("/");
+      router.refresh();
+    } catch {
+      setError("Tidak dapat menghubungi Supabase Auth. Coba lagi.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
