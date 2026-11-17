@@ -38,6 +38,8 @@ async function CatalogSections() {
   );
 }
 
+export const instant = false;
+
 export default function LandingPage() {
   return (
     <main className="min-h-screen">

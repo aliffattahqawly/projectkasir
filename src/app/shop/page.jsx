@@ -238,31 +238,6 @@ export default function ShopPage() {
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff06_1px,transparent_1px),linear-gradient(to_bottom,#ffffff06_1px,transparent_1px)] bg-[size:36px_36px]" />
       </div>
 
-
-      {/* BREADCRUMB */}
-      <div className="mx-auto max-w-7xl px-5 pt-6">
-        <nav
-          aria-label="Breadcrumb"
-          className="flex flex-wrap items-center gap-2 text-xs"
-        >
-          <Link
-            href="/"
-            className="flex items-center gap-1.5 text-blue-200 hover:text-white"
-          >
-            <span>⌂</span>
-            <span>Home</span>
-          </Link>
-
-          <span className="text-blue-300">›</span>
-
-          <span className="text-blue-200">Belanja</span>
-
-          <span className="text-blue-300">›</span>
-
-          <span className="font-semibold text-white">Semua Produk</span>
-        </nav>
-      </div>
-
       {/* KATALOG */}
       <section id="produk" className="mx-auto max-w-7xl px-5 py-8">
         {/* JUDUL KATALOG */}

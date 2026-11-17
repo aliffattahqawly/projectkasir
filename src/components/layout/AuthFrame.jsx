@@ -9,28 +9,35 @@ import { createClient as createSupabaseClient } from "../../utils/supabase/clien
 export default function AuthFrame({ children }) {
   const pathname = usePathname();
   const router = useRouter();
+
   const supabase = useMemo(() => createSupabaseClient(), []);
+
   const [authState, setAuthState] = useState(
     supabase ? "checking" : "signed-out"
   );
-  const isAuthPage = pathname === "/login" || pathname === "/register";
 
+  const isAuthPage =
+    pathname === "/login" || pathname === "/register";
+
+  // Memeriksa dan memantau status autentikasi
   useEffect(() => {
     let active = true;
 
-    if (!supabase) {
-      return;
-    }
+    if (!supabase) return;
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (active) setAuthState(session ? "signed-in" : "signed-out");
+      if (active) {
+        setAuthState(session ? "signed-in" : "signed-out");
+      }
     });
 
     supabase.auth.getSession().then(({ data, error }) => {
       if (active) {
-        setAuthState(!error && data.session ? "signed-in" : "signed-out");
+        setAuthState(
+          !error && data.session ? "signed-in" : "signed-out"
+        );
       }
     });
 
@@ -40,19 +47,26 @@ export default function AuthFrame({ children }) {
     };
   }, [supabase]);
 
+  // Mengatur akses halaman
   useEffect(() => {
-    if (authState === "signed-out" && !isAuthPage) {
+    const publicPages = ["/", "/login", "/register"];
+
+    const isPublicPage = publicPages.includes(pathname);
+
+    if (authState === "signed-out" && !isPublicPage) {
       router.replace("/login");
     } else if (authState === "signed-in" && isAuthPage) {
       router.replace("/");
     }
-  }, [authState, isAuthPage, router]);
+  }, [authState, isAuthPage, pathname, router]);
 
+  // Halaman login dan register
   if (isAuthPage) {
     return authState === "signed-in" ? null : children;
   }
 
-  if (authState !== "signed-in") {
+  // Memeriksa session
+  if (authState === "checking") {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-50 text-sm text-slate-600">
         Memeriksa sesi...
@@ -60,6 +74,23 @@ export default function AuthFrame({ children }) {
     );
   }
 
+  // Pengguna belum login tetapi membuka halaman beranda
+  if (authState === "signed-out" && pathname === "/") {
+    return (
+      <>
+        <Navbar />
+        {children}
+        <Footer />
+      </>
+    );
+  }
+
+  // Pengguna belum login dan membuka halaman privat
+  if (authState === "signed-out") {
+    return null;
+  }
+
+  // Pengguna sudah login
   return (
     <>
       <Navbar />

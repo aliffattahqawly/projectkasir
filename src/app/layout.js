@@ -1,3 +1,4 @@
+
 import AuthFrame from "../components/layout/AuthFrame";
 import "./globals.css";
 

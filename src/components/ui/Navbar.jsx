@@ -13,8 +13,9 @@ import {
   UserRound,
   X,
 } from "lucide-react";
-// import { supabase } from "../lib/supabase";
-import { supabase } from "../../lib/supabase";
+// import { supabase } from "../../lib/supabase";
+import { createClient } from "../../utils/supabase/client";
+import { useMemo } from "react";
 
 const navLinks = [
   { name: "Beranda", href: "/" },
@@ -29,6 +30,7 @@ export default function Navbar() {
   const [loggingOut, setLoggingOut] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const supabase = useMemo(() => createClient(), []);
 
   const isActive = (href) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -37,13 +39,19 @@ export default function Navbar() {
   useEffect(() => {
     if (!supabase) return;
 
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(({ data, error }) => {
+      console.log("User:", data?.user);
+      console.log("Error:", error);
+
       setUser(data?.user ?? null);
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log("Auth Event:", _event);
+      console.log("Session:", session);
+
       setUser(session?.user ?? null);
     });
 
@@ -52,12 +60,19 @@ export default function Navbar() {
 
   async function handleLogout() {
     if (loggingOut) return;
+
     setLoggingOut(true);
 
     try {
-      if (supabase) {
-        await supabase.auth.signOut();
+      if (!supabase) return;
+
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        console.error("Gagal logout:", error.message);
+        return;
       }
+
       setMenuOpen(false);
       router.replace("/login");
       router.refresh();
@@ -70,13 +85,13 @@ export default function Navbar() {
     <header className="fixed left-0 top-0 z-50 w-full px-3 pt-3 sm:px-5 sm:pt-4">
       <nav
         className="
-          relative mx-auto max-w-7xl
-          rounded-full border border-white/70
-          bg-white/60 px-3 py-2
-          shadow-[0_8px_30px_rgba(15,50,90,0.08)]
-          backdrop-blur-xl backdrop-saturate-150
-          sm:px-4 sm:py-2
-        "
+            relative mx-auto max-w-7xl
+            rounded-full border border-white/70
+            bg-white/60 px-3 py-2
+            shadow-[0_8px_30px_rgba(15,50,90,0.08)]
+            backdrop-blur-xl backdrop-saturate-150
+            sm:px-4 sm:py-2
+          "
       >
         <div className="flex h-10 items-center justify-between sm:h-11">
           {/* Menu Desktop */}
@@ -86,15 +101,15 @@ export default function Navbar() {
                 key={link.name}
                 href={link.href}
                 className={`
-                  rounded-full px-4 py-2
-                  text-[20px] font-medium
-                  transition-all duration-200
-                  ${
-                    isActive(link.href)
-                      ? "bg-red-600 text-white shadow-sm shadow-red-600/20"
-                      : "text-slate-600 hover:bg-white/80 hover:text-blue-600"
-                  }
-                `}
+                    rounded-full px-4 py-2
+                    text-[20px] font-medium
+                    transition-all duration-200
+                    ${
+                      isActive(link.href)
+                        ? "bg-red-600 text-white shadow-sm shadow-red-600/20"
+                        : "text-slate-600 hover:bg-white/80 hover:text-blue-600"
+                    }
+                  `}
               >
                 {link.name}
               </Link>
@@ -107,11 +122,11 @@ export default function Navbar() {
             <button
               aria-label="Cari produk"
               className="
-                hidden h-9 w-9 items-center justify-center
-                rounded-full bg-white/60 text-slate-600
-                transition hover:bg-white hover:text-blue-600
-                sm:flex
-              "
+                  hidden h-9 w-9 items-center justify-center
+                  rounded-full bg-white/60 text-slate-600
+                  transition hover:bg-white hover:text-blue-600
+                  sm:flex
+                "
             >
               <Search size={17} />
             </button>
@@ -120,20 +135,20 @@ export default function Navbar() {
             <button
               aria-label="Keranjang belanja"
               className="
-                relative flex h-9 w-9 items-center justify-center
-                rounded-full bg-white/60 text-slate-600
-                transition hover:bg-white hover:text-blue-600
-              "
+                  relative flex h-9 w-9 items-center justify-center
+                  rounded-full bg-white/60 text-slate-600
+                  transition hover:bg-white hover:text-blue-600
+                "
             >
               <ShoppingCart size={17} />
 
               <span
                 className="
-                  absolute -right-0.5 -top-0.5
-                  flex h-4 min-w-4 items-center justify-center
-                  rounded-full bg-blue-600 px-1
-                  text-[9px] font-bold text-white
-                "
+                    absolute -right-0.5 -top-0.5
+                    flex h-4 min-w-4 items-center justify-center
+                    rounded-full bg-blue-600 px-1
+                    text-[9px] font-bold text-white
+                  "
               >
                 0
               </span>
@@ -148,14 +163,14 @@ export default function Navbar() {
                 aria-label="Keluar dari akun"
                 title="Keluar"
                 className="
-                  hidden h-9 items-center justify-center gap-2
-                  rounded-full bg-red-50 px-4
-                  text-sm font-semibold text-red-600
-                  ring-1 ring-red-100
-                  transition hover:bg-red-100 hover:text-red-700
-                  disabled:cursor-not-allowed disabled:opacity-70
-                  sm:flex
-                "
+                    hidden h-9 items-center justify-center gap-2
+                    rounded-full bg-red-50 px-4
+                    text-sm font-semibold text-red-600
+                    ring-1 ring-red-100
+                    transition hover:bg-red-100 hover:text-red-700
+                    disabled:cursor-not-allowed disabled:opacity-70
+                    sm:flex
+                  "
               >
                 {loggingOut ? (
                   <Loader2 size={16} className="animate-spin" />
@@ -169,12 +184,12 @@ export default function Navbar() {
                 href="/login"
                 aria-label="Masuk ke akun"
                 className="
-                  hidden h-9 w-9 items-center justify-center
-                  rounded-full bg-blue-600 text-white
-                  shadow-sm shadow-blue-600/20
-                  transition hover:bg-blue-700
-                  sm:flex
-                "
+                    hidden h-9 w-9 items-center justify-center
+                    rounded-full bg-blue-600 text-white
+                    shadow-sm shadow-blue-600/20
+                    transition hover:bg-blue-700
+                    sm:flex
+                  "
               >
                 <UserRound size={17} />
               </Link>
@@ -186,11 +201,11 @@ export default function Navbar() {
               aria-label={menuOpen ? "Tutup menu" : "Buka menu"}
               aria-expanded={menuOpen}
               className="
-                flex h-9 w-9 items-center justify-center
-                rounded-full bg-blue-600 text-white
-                transition hover:bg-blue-700
-                md:hidden
-              "
+                  flex h-9 w-9 items-center justify-center
+                  rounded-full bg-blue-600 text-white
+                  transition hover:bg-blue-700
+                  md:hidden
+                "
             >
               {menuOpen ? <X size={19} /> : <Menu size={19} />}
             </button>
@@ -201,13 +216,13 @@ export default function Navbar() {
         {menuOpen && (
           <div
             className="
-              absolute left-0 right-0 top-full mt-3
-              rounded-2xl border border-white/70
-              bg-white/75 p-3
-              shadow-[0_12px_35px_rgba(15,50,90,0.10)]
-              backdrop-blur-2xl
-              md:hidden
-            "
+                absolute left-0 right-0 top-full mt-3
+                rounded-2xl border border-white/70
+                bg-white/75 p-3
+                shadow-[0_12px_35px_rgba(15,50,90,0.10)]
+                backdrop-blur-2xl
+                md:hidden
+              "
           >
             <div className="flex flex-col gap-1">
               {navLinks.map((link) => (
@@ -216,14 +231,14 @@ export default function Navbar() {
                   href={link.href}
                   onClick={() => setMenuOpen(false)}
                   className={`
-                    rounded-xl px-4 py-2.5
-                    text-sm font-medium transition
-                    ${
-                      isActive(link.href)
-                        ? "bg-red-50 text-red-700"
-                        : "text-slate-600 hover:bg-white/80 hover:text-blue-600"
-                    }
-                  `}
+                      rounded-xl px-4 py-2.5
+                      text-sm font-medium transition
+                      ${
+                        isActive(link.href)
+                          ? "bg-red-50 text-red-700"
+                          : "text-slate-600 hover:bg-white/80 hover:text-blue-600"
+                      }
+                    `}
                 >
                   {link.name}
                 </Link>
@@ -238,11 +253,11 @@ export default function Navbar() {
                   onClick={handleLogout}
                   disabled={loggingOut}
                   className="
-                    flex items-center gap-2 rounded-xl px-4 py-2.5
-                    text-left text-sm font-semibold text-red-600
-                    transition hover:bg-red-50
-                    disabled:cursor-not-allowed disabled:opacity-70
-                  "
+                      flex items-center gap-2 rounded-xl px-4 py-2.5
+                      text-left text-sm font-semibold text-red-600
+                      transition hover:bg-red-50
+                      disabled:cursor-not-allowed disabled:opacity-70
+                    "
                 >
                   {loggingOut ? (
                     <Loader2 size={16} className="animate-spin" />
@@ -256,10 +271,10 @@ export default function Navbar() {
                   href="/login"
                   onClick={() => setMenuOpen(false)}
                   className="
-                    flex items-center gap-2 rounded-xl px-4 py-2.5
-                    text-sm font-semibold text-blue-600
-                    transition hover:bg-blue-50
-                  "
+                      flex items-center gap-2 rounded-xl px-4 py-2.5
+                      text-sm font-semibold text-blue-600
+                      transition hover:bg-blue-50
+                    "
                 >
                   <LogIn size={16} />
                   Masuk
