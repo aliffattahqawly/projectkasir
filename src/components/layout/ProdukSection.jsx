@@ -10,6 +10,7 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import { useCart } from "../cart/CartProvider";
+import { animateToCart } from "../cart/animateToCart";
 
 const fallbackProductImage =
   "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=800";
@@ -48,10 +49,11 @@ export default function ProductSection({
             activeCategory
         );
 
-  const handleAddToCart = (product) => {
+  const handleAddToCart = (product, button) => {
     const stock = Number(product.stock ?? product.quantity ?? 0);
     if (!addToCart({ ...product, stock })) return;
 
+    animateToCart(button);
     setAddedProducts((prev) => [...prev, product.id]);
 
     setTimeout(() => {
@@ -198,7 +200,7 @@ export default function ProductSection({
                     </div>
 
                     <button
-                      onClick={() => handleAddToCart(product)}
+                      onClick={(event) => handleAddToCart(product, event.currentTarget)}
                       disabled={isOutOfStock}
                       className={`
                         flex h-11 items-center justify-center gap-2

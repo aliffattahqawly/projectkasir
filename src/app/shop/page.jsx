@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useState } from "react";
 import ShopView from "./ShopView";
 import { useCart } from "../../components/cart/CartProvider";
+import { animateToCart } from "../../components/cart/animateToCart";
 import { createClient as createSupabaseClient } from "../../utils/supabase/client";
 
 // =========================================
@@ -181,11 +182,13 @@ export default function ShopPage() {
   // =========================================
 
   // Fungsi untuk menambahkan produk ke keranjang belanja
-  function addToCart(product) {
+  function addToCart(product, button) {
     if (!addCartItem(product)) {
       setNotice("Jumlah maksimal untuk satu produk adalah 99.");
       return;
     }
+
+    animateToCart(button);
 
     // Tampilkan pesan notifikasi singkat dan sembunyikan otomatis setelah 2.5 detik
     setNotice(`${product.name} berhasil ditambahkan!`);

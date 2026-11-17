@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  LogIn,
   LogOut,
   Loader2,
   Menu,
@@ -133,6 +132,7 @@ export default function Navbar() {
               href="/cart"
               aria-label={`Keranjang belanja, ${cartCount} barang`}
               title="Keranjang belanja"
+              data-cart-target
               className="
                   relative flex h-9 w-9 items-center justify-center
                   rounded-full bg-white/60 text-slate-600
@@ -153,50 +153,25 @@ export default function Navbar() {
               </span>
             </Link>
 
-            {/* Account / Logout (desktop) */}
+            {/* Account status and actions */}
             {user ? (
-              <>
-                <span
-                  className="hidden max-w-40 truncate rounded-full bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-800 sm:block"
-                  title={user.email ?? userDisplayName}
-                >
-                  {userDisplayName}
-                </span>
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  disabled={loggingOut}
-                  aria-label="Keluar dari akun"
-                  title="Keluar"
-                  className="
-                    hidden h-9 items-center justify-center gap-2
-                    rounded-full bg-red-50 px-4
-                    text-sm font-semibold text-red-600
-                    ring-1 ring-red-100
-                    transition hover:bg-red-100 hover:text-red-700
-                    disabled:cursor-not-allowed disabled:opacity-70
-                    sm:flex
-                  "
-                >
-                  {loggingOut ? (
-                    <Loader2 size={16} className="animate-spin" />
-                  ) : (
-                    <LogOut size={16} />
-                  )}
-                  Keluar
-                </button>
-              </>
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={loggingOut}
+                aria-label={`Keluar dari akun ${userDisplayName}`}
+                title={`Masuk sebagai ${userDisplayName}`}
+                className="flex h-9 items-center gap-2 rounded-full bg-red-700 px-3 text-xs font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70 sm:px-4 sm:text-sm"
+              >
+                <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" aria-hidden="true" />
+                {loggingOut ? <Loader2 size={16} className="animate-spin" /> : <LogOut size={16} />}
+                Keluar
+              </button>
             ) : (
               <Link
                 href="/login"
                 aria-label="Masuk ke akun"
-                className="
-                    hidden h-9 w-9 items-center justify-center
-                    rounded-full bg-blue-600 text-white
-                    shadow-sm shadow-blue-600/20
-                    transition hover:bg-blue-700
-                    sm:flex
-                  "
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm shadow-blue-600/20 transition hover:bg-blue-700"
               >
                 <UserRound size={17} />
               </Link>
@@ -250,48 +225,6 @@ export default function Navbar() {
                   {link.name}
                 </Link>
               ))}
-
-              {/* Masuk / Keluar (mobile) */}
-              <div className="my-1 h-px bg-slate-200/70" />
-
-              {user ? (
-                <>
-                  <p className="px-4 py-2 text-xs text-slate-500">
-                    Masuk sebagai <span className="font-semibold text-blue-800">{userDisplayName}</span>
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    disabled={loggingOut}
-                    className="
-                      flex items-center gap-2 rounded-xl px-4 py-2.5
-                      text-left text-sm font-semibold text-red-600
-                      transition hover:bg-red-50
-                      disabled:cursor-not-allowed disabled:opacity-70
-                    "
-                  >
-                    {loggingOut ? (
-                      <Loader2 size={16} className="animate-spin" />
-                    ) : (
-                      <LogOut size={16} />
-                    )}
-                    Keluar
-                  </button>
-                </>
-              ) : (
-                <Link
-                  href="/login"
-                  onClick={() => setMenuOpen(false)}
-                  className="
-                      flex items-center gap-2 rounded-xl px-4 py-2.5
-                      text-sm font-semibold text-blue-600
-                      transition hover:bg-blue-50
-                    "
-                >
-                  <LogIn size={16} />
-                  Masuk
-                </Link>
-              )}
             </div>
           </div>
         )}

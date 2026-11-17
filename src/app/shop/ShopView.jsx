@@ -356,8 +356,8 @@ export default function ShopView(viewProps) {
                       </p>
 
                       <button
-                        onClick={() =>
-                          addToCart(product)
+                        onClick={(event) =>
+                          addToCart(product, event.currentTarget)
                         }
                         disabled={product.stock === 0}
                         aria-label={`Tambah ${product.name} ke keranjang`}
@@ -369,8 +369,8 @@ export default function ShopView(viewProps) {
 
                     {/* TOMBOL TAMBAH UTAMA */}
                     <button
-                      onClick={() =>
-                        addToCart(product)
+                      onClick={(event) =>
+                        addToCart(product, event.currentTarget)
                       }
                       disabled={product.stock === 0}
                       className="mt-3 w-full rounded-xl bg-gradient-to-r from-blue-600 to-sky-500 py-3 text-sm font-bold text-white shadow-md shadow-blue-100 transition hover:from-blue-700 hover:to-blue-600 disabled:cursor-not-allowed disabled:from-slate-300 disabled:to-slate-300"
