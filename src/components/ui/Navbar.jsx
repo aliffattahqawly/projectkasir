@@ -1,5 +1,8 @@
 "use client";
 
+// =========================================
+// IMPORT HOOK & LIBRARY EKSTERNAL / UTILS
+// =========================================
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -12,10 +15,12 @@ import {
   UserRound,
   X,
 } from "lucide-react";
-// import { supabase } from "../../lib/supabase";
 import { createClient } from "../../utils/supabase/client";
 import { useCart } from "../cart/CartProvider";
 
+// =========================================
+// DATA KONSTANTA: MENU NAVIGASI (NAVBAR)
+// =========================================
 const navLinks = [
   { name: "Beranda", href: "/" },
   { name: "Produk", href: "/shop" },
@@ -23,37 +28,60 @@ const navLinks = [
   { name: "riwayat transaksi", href: "/riwayat" },
 ];
 
+// =========================================
+// KOMPONEN UTAMA: Navbar
+// =========================================
 export default function Navbar() {
+  // =========================================
+  // STATE MANAGEMENT NAVBAR
+  // =========================================
   const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [loggingOut, setLoggingOut] = useState(false);
+
+  // Router & Path hooks Next.js
   const pathname = usePathname();
   const router = useRouter();
+
+  // Inisialisasi Supabase client dengan useMemo
   const supabase = useMemo(() => createClient(), []);
+
+  // Mengambil total jumlah keranjang dari CartProvider context
   const { cartCount } = useCart();
+
+  // Nama tampilan pengguna (berdasarkan metadata auth atau email)
   const userDisplayName =
     user?.user_metadata?.full_name?.trim() || user?.email || "Pengguna";
 
+  // Fungsi helper untuk mendeteksi apakah tautan sedang aktif
   const isActive = (href) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
-  // Pantau status login
+  // =========================================
+  // EFFECT: PANTAU STATUS LOGIN PENGGUNA
+  // =========================================
   useEffect(() => {
     if (!supabase) return;
 
+    // Mendapatkan user aktif saat pertama kali dimuat
     supabase.auth.getUser().then(({ data }) => {
       setUser(data?.user ?? null);
     });
 
+    // Mendengarkan perubahan status autentikasi (login/logout)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
 
+    // Cleanup subscription saat komponen unmount
     return () => subscription.unsubscribe();
-  }, []);
+  }, [supabase]);
 
+  // =========================================
+  // FUNGSI HANDLE LOGOUT (KELUAR AKUN)
+  // =========================================
   async function handleLogout() {
     if (loggingOut) return;
 
@@ -78,6 +106,9 @@ export default function Navbar() {
   }
 
   return (
+    // =========================================
+    // HEADER & WRAPPER UTAMA NAVBAR (FIXED)
+    // =========================================
     <header className="fixed left-0 top-0 z-50 w-full px-3 pt-3 sm:px-5 sm:pt-4">
       <nav
         className="
@@ -90,7 +121,10 @@ export default function Navbar() {
           "
       >
         <div className="flex h-10 items-center justify-between sm:h-11">
-          {/* Menu Desktop */}
+          
+          {/* =========================================
+              NAVIGASI MENU DESKTOP
+              ========================================= */}
           <div className="hidden items-center gap-1 md:flex">
             {navLinks.map((link) => (
               <Link
@@ -112,9 +146,12 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* Action Buttons */}
+          {/* =========================================
+              KOLOM TOMBOL AKSI (ACTION BUTTONS)
+              ========================================= */}
           <div className="flex items-center gap-2">
-            {/* Search */}
+            
+            {/* Tombol Pencarian (Search) */}
             <button
               aria-label="Cari produk"
               className="
@@ -127,7 +164,7 @@ export default function Navbar() {
               <Search size={17} />
             </button>
 
-            {/* Cart */}
+            {/* Tombol Keranjang Belanja (Cart) dengan Badge Angka */}
             <Link
               href="/cart"
               aria-label={`Keranjang belanja, ${cartCount} barang`}
@@ -153,7 +190,7 @@ export default function Navbar() {
               </span>
             </Link>
 
-            {/* Account status and actions */}
+            {/* Status Akun & Tombol Login/Logout */}
             {user ? (
               <button
                 type="button"
@@ -177,7 +214,7 @@ export default function Navbar() {
               </Link>
             )}
 
-            {/* Mobile Menu Button */}
+            {/* Tombol Menu Dropdown Mobile */}
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label={menuOpen ? "Tutup menu" : "Buka menu"}
@@ -194,7 +231,9 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Mobile Menu */}
+        {/* =========================================
+            MENU DROPDOWN KHUSUS MOBILE
+            ========================================= */}
         {menuOpen && (
           <div
             className="
