@@ -1,5 +1,6 @@
 
 import AuthFrame from "../components/layout/AuthFrame";
+import { CartProvider } from "../components/cart/CartProvider";
 import "./globals.css";
 
 export const metadata = {
@@ -11,7 +12,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="id">
       <body>
-        <AuthFrame>{children}</AuthFrame>
+        <CartProvider>
+          <AuthFrame>{children}</AuthFrame>
+        </CartProvider>
       </body>
     </html>
   );

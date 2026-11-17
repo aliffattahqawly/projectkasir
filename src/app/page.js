@@ -21,7 +21,10 @@ async function CatalogSections() {
     ]);
 
     categories = categoryResult.data ?? [];
-    products = productResult.data ?? [];
+    products = (productResult.data ?? []).map((product) => ({
+      ...product,
+      stock: Number(product.stock ?? product.quantity ?? 0),
+    }));
     categoriesError = Boolean(categoryResult.error);
     productsError = Boolean(productResult.error);
   }

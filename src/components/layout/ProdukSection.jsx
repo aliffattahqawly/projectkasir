@@ -9,6 +9,7 @@ import {
   Check,
   ShoppingBag,
 } from "lucide-react";
+import { useCart } from "../cart/CartProvider";
 
 const fallbackProductImage =
   "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=800";
@@ -26,6 +27,7 @@ export default function ProductSection({
   categories = [],
   hasError = false,
 }) {
+  const { addToCart } = useCart();
   const [activeCategory, setActiveCategory] = useState("semua");
   const [addedProducts, setAddedProducts] = useState([]);
 
@@ -47,7 +49,8 @@ export default function ProductSection({
         );
 
   const handleAddToCart = (product) => {
-    if (product.stock === 0) return;
+    const stock = Number(product.stock ?? product.quantity ?? 0);
+    if (!addToCart({ ...product, stock })) return;
 
     setAddedProducts((prev) => [...prev, product.id]);
 

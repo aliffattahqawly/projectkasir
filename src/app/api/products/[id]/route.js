@@ -1,12 +1,11 @@
 import {
-  forwardGoApi,
-  requireSupabaseUser,
+  requireSupabaseAdmin,
   validateProduct,
 } from "../../../../lib/products-api";
 
 export async function PATCH(request, { params }) {
-  const authError = await requireSupabaseUser(request);
-  if (authError) return authError;
+  const { supabase, errorResponse } = await requireSupabaseAdmin(request);
+  if (errorResponse) return errorResponse;
 
   let product;
 
@@ -22,13 +21,49 @@ export async function PATCH(request, { params }) {
   }
 
   const { id } = await params;
-  return forwardGoApi(`/products/${encodeURIComponent(id)}`, "PATCH", product);
+  const { data, error } = await supabase
+    .from("products")
+    .update(product)
+    .eq("id", id)
+    .select("*")
+    .maybeSingle();
+
+  if (error) {
+    return Response.json(
+      { error: `Produk gagal diperbarui: ${error.message}` },
+      { status: 500 }
+    );
+  }
+
+  if (!data) {
+    return Response.json({ error: "Produk tidak ditemukan." }, { status: 404 });
+  }
+
+  return Response.json(data);
 }
 
-export async function DELETE(_request, { params }) {
-  const authError = await requireSupabaseUser(_request);
-  if (authError) return authError;
+export async function DELETE(request, { params }) {
+  const { supabase, errorResponse } = await requireSupabaseAdmin(request);
+  if (errorResponse) return errorResponse;
 
   const { id } = await params;
-  return forwardGoApi(`/products/${encodeURIComponent(id)}`, "DELETE");
+  const { data, error } = await supabase
+    .from("products")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    return Response.json(
+      { error: `Produk gagal dihapus: ${error.message}` },
+      { status: 500 }
+    );
+  }
+
+  if (!data) {
+    return Response.json({ error: "Produk tidak ditemukan." }, { status: 404 });
+  }
+
+  return Response.json({ success: true });
 }

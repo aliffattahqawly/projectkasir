@@ -1,19 +1,30 @@
 import {
-  forwardGoApi,
-  requireSupabaseUser,
+  requireSupabaseAdmin,
   validateProduct,
 } from "../../../lib/products-api";
 
 export async function GET(request) {
-  const authError = await requireSupabaseUser(request);
-  if (authError) return authError;
+  const { supabase, errorResponse } = await requireSupabaseAdmin(request);
+  if (errorResponse) return errorResponse;
 
-  return forwardGoApi("/products", "GET");
+  const { data, error } = await supabase
+    .from("products")
+    .select("*")
+    .order("id", { ascending: false });
+
+  if (error) {
+    return Response.json(
+      { error: `Daftar produk gagal dimuat: ${error.message}` },
+      { status: 500 }
+    );
+  }
+
+  return Response.json(data ?? []);
 }
 
 export async function POST(request) {
-  const authError = await requireSupabaseUser(request);
-  if (authError) return authError;
+  const { supabase, errorResponse } = await requireSupabaseAdmin(request);
+  if (errorResponse) return errorResponse;
 
   let product;
 
@@ -28,5 +39,18 @@ export async function POST(request) {
     return Response.json({ error: validationError }, { status: 400 });
   }
 
-  return forwardGoApi("/products", "POST", product);
+  const { data, error } = await supabase
+    .from("products")
+    .insert(product)
+    .select("*")
+    .single();
+
+  if (error) {
+    return Response.json(
+      { error: `Produk gagal ditambahkan: ${error.message}` },
+      { status: 500 }
+    );
+  }
+
+  return Response.json(data, { status: 201 });
 }

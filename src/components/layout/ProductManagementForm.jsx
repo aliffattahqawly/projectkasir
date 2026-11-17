@@ -1,9 +1,15 @@
 "use client";
 
+// =========================================
+// IMPORT HOOK & LIBRARY EKSTERNAL / UTILS
+// =========================================
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ImagePlus, Pencil, RefreshCw, Trash2, X } from "lucide-react";
+import ProductManagementView from "./ProductManagementView";
 import { createClient as createSupabaseClient } from "../../utils/supabase/client";
 
+// =========================================
+// KONSTANTA DATA KOSONG & OPSI FORM
+// =========================================
 const emptyForm = {
   name: "",
   description: "",
@@ -23,6 +29,11 @@ const statusOptions = [
 const productImageBucket = "product-images";
 const maxImageBytes = 5 * 1024 * 1024;
 
+// =========================================
+// FUNGSI HELPER & PARSING DATA
+// =========================================
+
+// Ekstraksi baris produk dari berbagai format respons API
 function getProductRows(payload) {
   if (Array.isArray(payload)) return payload;
   if (Array.isArray(payload?.products)) return payload.products;
@@ -30,6 +41,7 @@ function getProductRows(payload) {
   return null;
 }
 
+// Memformat angka menjadi format mata uang Rupiah
 function formatPrice(price) {
   return new Intl.NumberFormat("id-ID", {
     style: "currency",
@@ -38,6 +50,7 @@ function formatPrice(price) {
   }).format(Number(price) || 0);
 }
 
+// Memformat input harga secara real-time dengan pemisah ribuan titik (.)
 function formatPriceInput(price) {
   const [whole, ...fractionParts] = String(price ?? "")
     .replace(/[^\d,]/g, "")
@@ -49,6 +62,7 @@ function formatPriceInput(price) {
     : groupedWhole;
 }
 
+// Mengubah string harga berformat lokal menjadi tipe number standar
 function parsePriceInput(price) {
   const normalized = String(price)
     .replace(/\s/g, "")
@@ -57,6 +71,7 @@ function parsePriceInput(price) {
   return Number(normalized);
 }
 
+// Membaca respons API dalam bentuk teks atau JSON
 async function readApiResponse(response) {
   const text = await response.text();
   if (!text) return null;
@@ -68,6 +83,7 @@ async function readApiResponse(response) {
   }
 }
 
+// Menghasilkan pesan error API yang informatif
 function getApiError(payload, fallback) {
   if (typeof payload === "string") return payload.slice(0, 500);
 
@@ -82,6 +98,7 @@ function getApiError(payload, fallback) {
   return fallback;
 }
 
+// Mengambil token autentikasi sesi dari Supabase untuk header request
 async function getSessionHeaders(supabase) {
   if (!supabase) {
     throw new Error("Konfigurasi Supabase Auth belum tersedia.");
@@ -97,8 +114,16 @@ async function getSessionHeaders(supabase) {
   return { Authorization: `Bearer ${accessToken}` };
 }
 
-export default function ProductManagementForm() {
+// =========================================
+// KOMPONEN UTAMA: ProductManagementForm (Container Component)
+// =========================================
+export default function ProductManagementForm({ onSaved }) {
+  // Inisialisasi Supabase client dengan useMemo
   const supabase = useMemo(() => createSupabaseClient(), []);
+
+  // =========================================
+  // STATE MANAGEMENT FORM & KATALOG
+  // =========================================
   const [form, setForm] = useState(emptyForm);
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
@@ -114,15 +139,21 @@ export default function ProductManagementForm() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [editingId, setEditingId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+
+  // Refs untuk elemen DOM
   const formSectionRef = useRef(null);
   const fileInputRef = useRef(null);
 
+  // Cleanup URL object preview gambar saat komponen unmount
   useEffect(() => {
     return () => {
       if (imagePreview.startsWith("blob:")) URL.revokeObjectURL(imagePreview);
     };
   }, [imagePreview]);
 
+  // =========================================
+  // EFFECT: MENGAMBIL DATA KATEGORI DARI SUPABASE
+  // =========================================
   useEffect(() => {
     let active = true;
 
@@ -162,6 +193,9 @@ export default function ProductManagementForm() {
     };
   }, [supabase]);
 
+  // =========================================
+  // EFFECT: MENGAMBIL DAFTAR PRODUK & URL SIGNED GAMBAR
+  // =========================================
   useEffect(() => {
     let active = true;
     const controller = new AbortController();
@@ -187,6 +221,7 @@ export default function ProductManagementForm() {
           throw new Error("Format respons daftar produk tidak dikenali.");
         }
 
+        // Membuat signed URL untuk setiap gambar produk di Storage
         const rowsWithImages = await Promise.all(
           rows.map(async (product) => {
             if (!product.image || /^https?:\/\//i.test(product.image)) {
@@ -225,6 +260,11 @@ export default function ProductManagementForm() {
     };
   }, [refreshKey, supabase]);
 
+  // =========================================
+  // FUNGSI HANDLER FORM & INPUT
+  // =========================================
+
+  // Mengubah nilai field teks biasa
   function updateField(event) {
     const { name, value } = event.target;
     setForm((current) => ({ ...current, [name]: value }));
@@ -232,6 +272,7 @@ export default function ProductManagementForm() {
     setSuccessMessage("");
   }
 
+  // Mengubah dan memformat input harga
   function updatePrice(event) {
     const [whole, ...fractionParts] = event.target.value
       .replace(/[^\d,]/g, "")
@@ -244,6 +285,7 @@ export default function ProductManagementForm() {
     setSuccessMessage("");
   }
 
+  // Menangani pemilihan file gambar dari perangkat
   function handleImageSelect(event) {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -266,6 +308,7 @@ export default function ProductManagementForm() {
     setSuccessMessage("");
   }
 
+  // Memulai mode edit produk
   function startEditing(product) {
     const currentStatus = String(product.status ?? "")
       .toLowerCase()
@@ -295,6 +338,7 @@ export default function ProductManagementForm() {
     formSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  // Membatalkan mode edit dan mereset form
   function cancelEditing() {
     setForm(emptyForm);
     setSelectedImage(null);
@@ -305,6 +349,7 @@ export default function ProductManagementForm() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
+  // Menghapus data produk berdasarkan ID
   async function handleDelete(product) {
     if (!window.confirm(`Hapus produk "${product.name}"?`)) return;
 
@@ -333,10 +378,14 @@ export default function ProductManagementForm() {
     }
   }
 
+  // =========================================
+  // FUNGSI SUBMIT FORM (TAMBAH / UPDATE PRODUK)
+  // =========================================
   async function handleSubmit(event) {
     event.preventDefault();
     setFormError("");
     setSuccessMessage("");
+    const wasEditing = Boolean(editingId);
 
     const product = {
       ...form,
@@ -350,6 +399,7 @@ export default function ProductManagementForm() {
       status: form.status.trim(),
     };
 
+    // Validasi nilai numerik
     if (!Number.isFinite(product.price) || product.price < 0) {
       setFormError("Harga harus berupa angka nol atau lebih.");
       return;
@@ -364,6 +414,7 @@ export default function ProductManagementForm() {
     let uploadedImagePath = "";
 
     try {
+      // Proses upload gambar baru ke Supabase Storage jika ada
       if (selectedImage) {
         if (!supabase) {
           throw new Error("Konfigurasi Supabase Storage belum tersedia.");
@@ -389,6 +440,7 @@ export default function ProductManagementForm() {
         product.image = publicUrlData.publicUrl;
       }
 
+      // Kirim request POST (Tambah) atau PATCH (Update) ke API backend
       const response = await fetch(
         editingId
           ? `/api/products/${encodeURIComponent(editingId)}`
@@ -413,6 +465,7 @@ export default function ProductManagementForm() {
         );
       }
 
+      // Reset form setelah berhasil
       setForm(emptyForm);
       setEditingId(null);
       setSelectedImage(null);
@@ -422,9 +475,11 @@ export default function ProductManagementForm() {
         editingId ? "Produk berhasil diperbarui." : "Produk berhasil ditambahkan."
       );
       setRefreshKey((current) => current + 1);
+      onSaved?.({ editing: wasEditing });
     } catch (error) {
       let message = error.message || "Produk gagal disimpan.";
 
+      // Rollback file upload jika proses penyimpanan ke DB gagal
       if (uploadedImagePath && supabase) {
         const { error: cleanupError } = await supabase.storage
           .from(productImageBucket)
@@ -440,329 +495,40 @@ export default function ProductManagementForm() {
     }
   }
 
+  // =========================================
+  // RENDER: MENERUSKAN PROPS KE ProductManagementView
+  // =========================================
   return (
-    <div className="space-y-10">
-      <section
-        ref={formSectionRef}
-        className="scroll-mt-24 border-y border-blue-100 bg-white px-5 py-7 sm:px-8"
-      >
-        <div className="mb-6 flex items-center justify-between gap-4">
-          <h2 className="text-xl font-semibold text-slate-900">
-            {editingId ? "Edit produk" : "Tambah produk"}
-          </h2>
-          {editingId && (
-            <button
-              className="inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-600 transition hover:bg-slate-100"
-              type="button"
-              aria-label="Batalkan edit"
-              title="Batalkan edit"
-              onClick={cancelEditing}
-            >
-              <X size={17} />
-            </button>
-          )}
-        </div>
-        <form className="grid gap-5 md:grid-cols-2" onSubmit={handleSubmit}>
-          <label className="space-y-1.5 text-sm font-medium text-slate-700">
-            Nama produk
-            <input
-              className="w-full rounded-md border border-slate-300 px-3 py-2.5 font-normal outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-              name="name"
-              value={form.name}
-              onChange={updateField}
-              maxLength={160}
-              required
-            />
-          </label>
-
-          <label className="space-y-1.5 text-sm font-medium text-slate-700">
-            Kategori
-            <select
-              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 font-normal outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-              name="category_id"
-              value={form.category_id}
-              onChange={updateField}
-              required
-              disabled={categoriesLoading || categories.length === 0}
-            >
-              <option value="">
-                {categoriesLoading ? "Memuat kategori..." : "Pilih kategori"}
-              </option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="space-y-1.5 text-sm font-medium text-slate-700">
-            Deskripsi
-            <textarea
-              className="min-h-24 w-full rounded-md border border-slate-300 px-3 py-2.5 font-normal outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-              name="description"
-              value={form.description}
-              onChange={updateField}
-              maxLength={2000}
-              required
-            />
-          </label>
-
-          <div className="grid grid-cols-2 gap-4">
-            <label className="space-y-1.5 text-sm font-medium text-slate-700">
-              Harga
-              <div className="flex items-center rounded-md border border-slate-300 focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-100">
-                <span className="px-3 text-slate-500">Rp</span>
-                <input
-                  className="min-w-0 flex-1 rounded-r-md px-3 py-2.5 font-normal outline-none"
-                  type="text"
-                  inputMode="decimal"
-                  aria-label="Harga dalam Rupiah"
-                  value={formatPriceInput(form.price)}
-                  onChange={updatePrice}
-                  placeholder="Contoh: 21.211,50"
-                  required
-                />
-              </div>
-            </label>
-            <label className="space-y-1.5 text-sm font-medium text-slate-700">
-              Jumlah
-              <input
-                className="w-full rounded-md border border-slate-300 px-3 py-2.5 font-normal outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-                type="number"
-                name="quantity"
-                value={form.quantity}
-                onChange={updateField}
-                min="0"
-                step="1"
-                required
-              />
-            </label>
-          </div>
-
-          <div className="space-y-1.5 text-sm font-medium text-slate-700">
-            <span className="block">Gambar produk</span>
-            <label className="flex cursor-pointer items-center gap-2 rounded-md border border-dashed border-slate-300 px-3 py-3 text-sm font-normal text-slate-600 hover:border-blue-500 hover:bg-blue-50">
-              <ImagePlus size={18} />
-              <span>Pilih gambar dari bucket product-images (maks. 5 MiB)</span>
-              <input
-                ref={fileInputRef}
-                className="sr-only"
-                type="file"
-                accept="image/*"
-                onChange={handleImageSelect}
-              />
-            </label>
-            {imagePreview && (
-              <div className="relative mt-2 h-28 w-28">
-                <img
-                  src={imagePreview}
-                  alt="Pratinjau gambar produk"
-                  className="h-full w-full rounded-md border border-slate-200 object-cover"
-                />
-                <button
-                  className="absolute -right-2 -top-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-white text-slate-700 shadow"
-                  type="button"
-                  aria-label="Hapus gambar pilihan"
-                  title="Hapus gambar pilihan"
-                  onClick={() => {
-                    setSelectedImage(null);
-                    setImagePreview(form.image || "");
-                    if (fileInputRef.current) fileInputRef.current.value = "";
-                  }}
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <label className="space-y-1.5 text-sm font-medium text-slate-700">
-              Satuan
-              <select
-                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 font-normal outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-                name="unit"
-                value={form.unit}
-                onChange={updateField}
-                required
-              >
-                <option value="">Pilih satuan</option>
-                {unitOptions.map((unit) => (
-                  <option key={unit} value={unit}>
-                    {unit}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="space-y-1.5 text-sm font-medium text-slate-700">
-              Status
-              <select
-                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 font-normal outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-                name="status"
-                value={form.status}
-                onChange={updateField}
-                required
-              >
-                <option value="">Pilih status</option>
-                {statusOptions.map((status) => (
-                  <option key={status.value} value={status.value}>
-                    {status.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          {categoriesError && (
-            <p className="text-sm text-red-700 md:col-span-2" role="alert">
-              {categoriesError}
-            </p>
-          )}
-          {categories.length === 0 && !categoriesLoading && !categoriesError && (
-            <p className="text-sm text-slate-600 md:col-span-2">
-              Belum ada kategori. Produk belum dapat ditambahkan.
-            </p>
-          )}
-          {formError && (
-            <p className="text-sm text-red-700 md:col-span-2" role="alert">
-              {formError}
-            </p>
-          )}
-          {successMessage && (
-            <p className="text-sm text-green-700 md:col-span-2" role="status">
-              {successMessage}
-            </p>
-          )}
-
-          <div className="md:col-span-2">
-            <button
-              className="rounded-md bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-400"
-              type="submit"
-              disabled={
-                isSubmitting || categoriesLoading || categories.length === 0
-              }
-            >
-              {isSubmitting
-                ? "Menyimpan..."
-                : editingId
-                  ? "Simpan perubahan"
-                  : "Tambah produk"}
-            </button>
-          </div>
-        </form>
-      </section>
-
-      <section aria-labelledby="product-list-heading">
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <h2
-            id="product-list-heading"
-            className="text-xl font-semibold text-slate-900"
-          >
-            Daftar produk
-          </h2>
-          <button
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-300 text-slate-700 transition hover:bg-slate-100 disabled:opacity-50"
-            type="button"
-            aria-label="Muat ulang produk"
-            title="Muat ulang produk"
-            onClick={() => setRefreshKey((current) => current + 1)}
-            disabled={productsLoading}
-          >
-            <RefreshCw size={16} className={productsLoading ? "animate-spin" : ""} />
-          </button>
-        </div>
-
-        {productsError && (
-          <p className="mb-4 text-sm text-red-700" role="alert">
-            {productsError}
-          </p>
-        )}
-
-        {productsLoading ? (
-          <p className="py-8 text-sm text-slate-500">Memuat produk...</p>
-        ) : products.length === 0 ? (
-          <p className="py-8 text-sm text-slate-500">Belum ada produk.</p>
-        ) : (
-          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            {products.map((product, index) => {
-              const category = categories.find(
-                (item) => String(item.id) === String(product.category_id)
-              );
-              const normalizedStatus = String(product.status ?? "")
-                .toLowerCase()
-                .replaceAll("_", " ");
-              const isDeleting = deletingId === product.id;
-
-              return (
-                <article
-                  key={product.id ?? `${product.name}-${index}`}
-                  className="overflow-hidden rounded-md border border-slate-200 bg-white"
-                >
-                  <div className="h-44 bg-slate-100">
-                    {product.image ? (
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="h-full w-full object-contain p-3"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-sm text-slate-400">
-                        Gambar tidak tersedia
-                      </div>
-                    )}
-                  </div>
-                  <div className="space-y-3 p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h3 className="font-semibold text-slate-900">
-                          {product.name}
-                        </h3>
-                        <p className="mt-1 text-sm text-slate-500">
-                          {category?.name ?? product.category_id}
-                        </p>
-                      </div>
-                      <span className="shrink-0 rounded-sm bg-slate-100 px-2 py-1 text-xs text-slate-600">
-                        {statusOptions.find(
-                          (status) => status.value === normalizedStatus
-                        )?.label ?? product.status}
-                      </span>
-                    </div>
-                    <p className="font-semibold text-blue-700">
-                      {formatPrice(product.price)}
-                      <span className="ml-1 text-sm font-normal text-slate-500">
-                        / {product.unit}
-                      </span>
-                    </p>
-                    <p className="text-sm text-slate-600">
-                      Stok: {product.quantity} {product.unit}
-                    </p>
-                    <div className="flex gap-2 border-t border-slate-100 pt-3">
-                      <button
-                        className="inline-flex flex-1 items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                        type="button"
-                        onClick={() => startEditing(product)}
-                      >
-                        <Pencil size={15} />
-                        Edit
-                      </button>
-                      <button
-                        className="inline-flex flex-1 items-center justify-center gap-2 rounded-md border border-red-200 px-3 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50 disabled:opacity-50"
-                        type="button"
-                        onClick={() => handleDelete(product)}
-                        disabled={isDeleting}
-                      >
-                        <Trash2 size={15} />
-                        {isDeleting ? "Menghapus..." : "Hapus"}
-                      </button>
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
-      </section>
-    </div>
+    <ProductManagementView
+      form={form}
+      categories={categories}
+      categoriesLoading={categoriesLoading}
+      categoriesError={categoriesError}
+      products={products}
+      productsLoading={productsLoading}
+      productsError={productsError}
+      formError={formError}
+      successMessage={successMessage}
+      isSubmitting={isSubmitting}
+      imagePreview={imagePreview}
+      setImagePreview={setImagePreview}
+      setSelectedImage={setSelectedImage}
+      setRefreshKey={setRefreshKey}
+      editingId={editingId}
+      deletingId={deletingId}
+      formSectionRef={formSectionRef}
+      fileInputRef={fileInputRef}
+      unitOptions={unitOptions}
+      statusOptions={statusOptions}
+      updateField={updateField}
+      updatePrice={updatePrice}
+      handleImageSelect={handleImageSelect}
+      startEditing={startEditing}
+      cancelEditing={cancelEditing}
+      handleDelete={handleDelete}
+      handleSubmit={handleSubmit}
+      formatPrice={formatPrice}
+      formatPriceInput={formatPriceInput}
+    />
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 // import { supabase } from "../../lib/supabase";
 import { createClient } from "../../utils/supabase/client";
-import { useMemo } from "react";
+import { useCart } from "../cart/CartProvider";
 
 const navLinks = [
   { name: "Beranda", href: "/" },
@@ -31,6 +31,9 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
+  const { cartCount } = useCart();
+  const userDisplayName =
+    user?.user_metadata?.full_name?.trim() || user?.email || "Pengguna";
 
   const isActive = (href) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -39,19 +42,13 @@ export default function Navbar() {
   useEffect(() => {
     if (!supabase) return;
 
-    supabase.auth.getUser().then(({ data, error }) => {
-      console.log("User:", data?.user);
-      console.log("Error:", error);
-
+    supabase.auth.getUser().then(({ data }) => {
       setUser(data?.user ?? null);
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log("Auth Event:", _event);
-      console.log("Session:", session);
-
       setUser(session?.user ?? null);
     });
 
@@ -74,7 +71,7 @@ export default function Navbar() {
       }
 
       setMenuOpen(false);
-      router.replace("/login");
+      router.replace("/");
       router.refresh();
     } finally {
       setLoggingOut(false);
@@ -132,8 +129,10 @@ export default function Navbar() {
             </button>
 
             {/* Cart */}
-            <button
-              aria-label="Keranjang belanja"
+            <Link
+              href="/cart"
+              aria-label={`Keranjang belanja, ${cartCount} barang`}
+              title="Keranjang belanja"
               className="
                   relative flex h-9 w-9 items-center justify-center
                   rounded-full bg-white/60 text-slate-600
@@ -150,19 +149,26 @@ export default function Navbar() {
                     text-[9px] font-bold text-white
                   "
               >
-                0
+                {cartCount}
               </span>
-            </button>
+            </Link>
 
             {/* Account / Logout (desktop) */}
             {user ? (
-              <button
-                type="button"
-                onClick={handleLogout}
-                disabled={loggingOut}
-                aria-label="Keluar dari akun"
-                title="Keluar"
-                className="
+              <>
+                <span
+                  className="hidden max-w-40 truncate rounded-full bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-800 sm:block"
+                  title={user.email ?? userDisplayName}
+                >
+                  {userDisplayName}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  disabled={loggingOut}
+                  aria-label="Keluar dari akun"
+                  title="Keluar"
+                  className="
                     hidden h-9 items-center justify-center gap-2
                     rounded-full bg-red-50 px-4
                     text-sm font-semibold text-red-600
@@ -171,14 +177,15 @@ export default function Navbar() {
                     disabled:cursor-not-allowed disabled:opacity-70
                     sm:flex
                   "
-              >
-                {loggingOut ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : (
-                  <LogOut size={16} />
-                )}
-                Keluar
-              </button>
+                >
+                  {loggingOut ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <LogOut size={16} />
+                  )}
+                  Keluar
+                </button>
+              </>
             ) : (
               <Link
                 href="/login"
@@ -248,24 +255,29 @@ export default function Navbar() {
               <div className="my-1 h-px bg-slate-200/70" />
 
               {user ? (
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  disabled={loggingOut}
-                  className="
+                <>
+                  <p className="px-4 py-2 text-xs text-slate-500">
+                    Masuk sebagai <span className="font-semibold text-blue-800">{userDisplayName}</span>
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    disabled={loggingOut}
+                    className="
                       flex items-center gap-2 rounded-xl px-4 py-2.5
                       text-left text-sm font-semibold text-red-600
                       transition hover:bg-red-50
                       disabled:cursor-not-allowed disabled:opacity-70
                     "
-                >
-                  {loggingOut ? (
-                    <Loader2 size={16} className="animate-spin" />
-                  ) : (
-                    <LogOut size={16} />
-                  )}
-                  Keluar
-                </button>
+                  >
+                    {loggingOut ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                      <LogOut size={16} />
+                    )}
+                    Keluar
+                  </button>
+                </>
               ) : (
                 <Link
                   href="/login"
